@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,25 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.netflix.nebula.hollow
+package com.netflix.nebula.hollow;
 
-import org.gradle.api.Plugin
-import org.gradle.api.Project
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
 
-class ApiGeneratorPlugin implements Plugin<Project> {
+import java.net.URLClassLoader;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ApiGeneratorPlugin implements Plugin<Project> {
 
     /**
      * Task depends on build, because we need .class files for {@link URLClassLoader} to load them to
      * {@link com.netflix.hollow.core.write.objectmapper.HollowObjectMapper}
      */
     @Override
-    void apply(Project project) {
-        project.tasks.create([
-                'name' : 'generateHollowConsumerApi',
-                'group' : 'hollow',
-                'type' : ApiGeneratorTask.class,
-                'dependsOn' : ['build']
-        ])
-        project.extensions.create('hollow', ApiGeneratorExtension.class)
+    public void apply(Project project) {
+        Map<String, Object> taskPropertiesMap = new HashMap<>();
+        taskPropertiesMap.put("name", "generateHollowConsumerApi");
+        taskPropertiesMap.put("group", "hollow");
+        taskPropertiesMap.put("type", ApiGeneratorTask.class);
+        taskPropertiesMap.put("dependsOn", Collections.singletonList("build"));
+        project.getTasks().create(taskPropertiesMap);
+
+        project.getExtensions().create("hollow", ApiGeneratorExtension.class);
     }
 }

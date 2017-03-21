@@ -9,7 +9,6 @@ In order to use, add plugin dependency to your buildscript
 ```
 buildscript {
     repositories {
-        mavenLocal()
         jcenter()
     }
     dependencies {
@@ -19,7 +18,7 @@ buildscript {
 ```
 apply it
 ```
-apply plugin: 'nebula.hollow-plugin'
+apply plugin: 'nebula.hollow'
 ```
 and configure (you have to specify all the three values to work)
 ```

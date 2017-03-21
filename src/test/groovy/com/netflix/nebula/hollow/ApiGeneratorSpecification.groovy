@@ -35,7 +35,7 @@ class ApiGeneratorSpecification extends IntegrationSpec {
             group = 'com.netflix.nebula.hollow'
             
             apply plugin: 'java'
-            apply plugin: 'nebula.hollow-plugin'
+            apply plugin: 'nebula.hollow'
             
             sourceCompatibility = 1.7
             
@@ -55,17 +55,30 @@ class ApiGeneratorSpecification extends IntegrationSpec {
             }
         """.stripIndent()
 
-        def file = createFile('src/main/java/org/package1/TestEntity.java')
+        def packageInfoFile = createFile('src/main/java/org/package1/package-info.java')
+        packageInfoFile << """
+            package org.package1;
+        """.stripIndent()
+
+        def file = createFile('src/main/java/org/package1/Entity1.java')
         file << """
             package org.package1;
+            
+            public class Entity1 {
+                
+                private String stringField;
+                private Integer integerField;
+            }
+        """.stripIndent()
+
+        def fileInSubPackage = createFile('src/main/java/org/package1/subpackage/Entity2.java')
+        fileInSubPackage << """
+            package org.package1.subpackage;
             
             import java.util.List;
             import java.util.concurrent.atomic.AtomicBoolean;
             
-            public class TestEntity {
-                
-                private String stringField;
-                private Integer integerField;
+            public class Entity2 {
                 private List<AtomicBoolean> collectionField;
             }
         """.stripIndent()
@@ -77,7 +90,7 @@ class ApiGeneratorSpecification extends IntegrationSpec {
 
         then:
         expectedFiles.forEach { fileName ->
-            assert getFile(fileName).exists() == true
+            assert getFile(fileName).exists()
         }
     }
 
@@ -85,6 +98,9 @@ class ApiGeneratorSpecification extends IntegrationSpec {
         new File(projectDir, '/src/main/java/org/package3/api/'.concat(fileName))
     }
 
-    def expectedFiles = ['MyApiClassName.java', 'TestEntityHollowFactory.java', 'TestEntityTypeAPI.java',
-                         'StringTypeAPI.java', 'ListOfAtomicBooleanTypeAPI.java', 'IntegerTypeAPI.java']
+    def expectedFiles = ['MyApiClassName.java',
+                         'Entity1HollowFactory.java', 'Entity1TypeAPI.java',
+                         'IntegerTypeAPI.java', 'StringTypeAPI.java',
+                         'Entity2HollowFactory.java', 'Entity2TypeAPI.java',
+                         'ListOfAtomicBooleanTypeAPI.java']
 }

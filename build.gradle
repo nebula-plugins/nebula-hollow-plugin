@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 plugins {
-    id "nebula.plugin-plugin" version "5.1.1"
+    id 'nebula.plugin-plugin' version '5.1.1'
     id 'com.gradle.plugin-publish' version '0.9.7'
 }
 
 version '0.1'
 
-apply plugin: 'groovy'
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
 
 apply from: 'gradle/dependencies.gradle'
 
@@ -33,13 +35,13 @@ contacts {
 
 pluginBundle {
     website = 'http://www.hollow.how'
-    vcsUrl = 'https://github.com/nebula-plugins/hollow-plugin'
+    vcsUrl = 'https://github.com/nebula-plugins/nebula-hollow-plugin'
     description = 'This plugin provides a task for generating hollow consumer api.'
     tags = ['hollow', 'nebula']
 
     plugins {
         hollowPlugin {
-            id = 'nebula.hollow-plugin'
+            id = 'nebula.hollow'
             displayName = 'Nebula Hollow Plugin'
         }
     }
