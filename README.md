@@ -1,4 +1,5 @@
-# Hollow-api-generator-plugin
+=======
+# Hollow API Generator Nebula Plugin
 
 This plugin provides task for generating hollow consumer api, that is 
 described [here](http://hollow.how/getting-started/#consumer-api-generation)
