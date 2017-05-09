@@ -16,11 +16,8 @@
 plugins {
     id 'nebula.plugin-plugin' version '5.1.1'
     id 'com.gradle.plugin-publish' version '0.9.7'
+    id 'java'
 }
-
-version '0.1'
-
-apply plugin: 'java'
 
 sourceCompatibility = 1.7
 
