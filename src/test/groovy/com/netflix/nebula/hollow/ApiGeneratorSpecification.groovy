@@ -23,6 +23,14 @@ class ApiGeneratorSpecification extends IntegrationSpec {
     def 'plugin applies'() {
         given:
         buildFile << """
+        buildscript {
+            repositories {
+                jcenter()
+            }
+            dependencies {
+                classpath "com.netflix.nebula:nebula-hollow-plugin:0.2.1"
+            }
+        }
         apply plugin: 'nebula.hollow'
         """
 
@@ -36,6 +44,14 @@ class ApiGeneratorSpecification extends IntegrationSpec {
     def 'generator task configures'() {
         given:
         buildFile << """
+        buildscript {
+            repositories {
+                jcenter()
+            }
+            dependencies {
+                classpath "com.netflix.nebula:nebula-hollow-plugin:0.2.1"
+            }
+        }
         apply plugin: 'nebula.hollow'
 
         hollow {
@@ -52,10 +68,17 @@ class ApiGeneratorSpecification extends IntegrationSpec {
         noExceptionThrown()
     }
 
-    @Ignore
     def 'execution of generator task is successful'() {
         given:
         buildFile << """
+            buildscript {
+                repositories {
+                    jcenter()
+                }
+                dependencies {
+                    classpath "com.netflix.nebula:nebula-hollow-plugin:0.2.1"
+                }
+            }
             apply plugin: 'java'
             apply plugin: 'nebula.hollow'
             
@@ -65,6 +88,10 @@ class ApiGeneratorSpecification extends IntegrationSpec {
                 packagesToScan = ['org.package1', 'org.package2']
                 apiClassName = 'MyApiClassName'
                 apiPackageName = 'org.package3.api'
+            }
+            
+            repositories {
+                jcenter()
             }
                         
             dependencies {
