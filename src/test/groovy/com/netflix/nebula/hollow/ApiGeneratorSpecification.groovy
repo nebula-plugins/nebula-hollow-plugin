@@ -139,7 +139,7 @@ class ApiGeneratorSpecification extends IntegrationSpec {
             'Entity2HollowFactory.java',
             'Entity2TypeAPI.java',
             'ListOfAtomicBooleanTypeAPI.java'
-        ].forEach { fileName ->
+        ].each { fileName ->
             assert getFile(fileName).exists()
         }
     }
