@@ -16,7 +16,6 @@
 package com.netflix.nebula.hollow
 
 import nebula.test.IntegrationSpec
-import spock.lang.Ignore
 
 class ApiGeneratorSpecification extends IntegrationSpec {
 
@@ -28,7 +27,7 @@ class ApiGeneratorSpecification extends IntegrationSpec {
                 jcenter()
             }
             dependencies {
-                classpath "com.netflix.nebula:nebula-hollow-plugin:0.2.1"
+                classpath "com.netflix.nebula:nebula-hollow-plugin:0.+"
             }
         }
         apply plugin: 'nebula.hollow'
@@ -49,7 +48,7 @@ class ApiGeneratorSpecification extends IntegrationSpec {
                 jcenter()
             }
             dependencies {
-                classpath "com.netflix.nebula:nebula-hollow-plugin:0.2.1"
+                classpath "com.netflix.nebula:nebula-hollow-plugin:0.+"
             }
         }
         apply plugin: 'nebula.hollow'
@@ -76,7 +75,7 @@ class ApiGeneratorSpecification extends IntegrationSpec {
                     jcenter()
                 }
                 dependencies {
-                    classpath "com.netflix.nebula:nebula-hollow-plugin:0.2.1"
+                    classpath "com.netflix.nebula:nebula-hollow-plugin:0.+"
                 }
             }
             apply plugin: 'java'
