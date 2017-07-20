@@ -26,3 +26,6 @@ dependencies {
     compile localGroovy()
     compile "com.netflix.hollow:hollow:${hollowVersion}"
 }
+
+// Dependency locks are not needed for this project
+ext.set("dependencyLock.ignore", "true")
