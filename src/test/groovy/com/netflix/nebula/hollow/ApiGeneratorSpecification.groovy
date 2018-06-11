@@ -16,7 +16,6 @@
 package com.netflix.nebula.hollow
 
 import nebula.test.IntegrationSpec
-import spock.lang.Ignore
 
 class ApiGeneratorSpecification extends IntegrationSpec {
 
@@ -52,7 +51,6 @@ class ApiGeneratorSpecification extends IntegrationSpec {
         noExceptionThrown()
     }
 
-    @Ignore
     def 'execution of generator task is successful'() {
         given:
         buildFile << """
@@ -65,6 +63,10 @@ class ApiGeneratorSpecification extends IntegrationSpec {
                 packagesToScan = ['org.package1', 'org.package2']
                 apiClassName = 'MyApiClassName'
                 apiPackageName = 'org.package3.api'
+            }
+            
+            repositories {
+                jcenter()
             }
                         
             dependencies {
@@ -113,7 +115,7 @@ class ApiGeneratorSpecification extends IntegrationSpec {
             'Entity2HollowFactory.java',
             'Entity2TypeAPI.java',
             'ListOfAtomicBooleanTypeAPI.java'
-        ].forEach { fileName ->
+        ].each { fileName ->
             assert getFile(fileName).exists()
         }
     }
