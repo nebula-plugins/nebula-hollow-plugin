@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,4 +22,16 @@ public class ApiGeneratorExtension {
     public List<String> packagesToScan;
     public String apiClassName;
     public String apiPackageName;
+    public String getterPrefix;
+    public String classPostfix;
+    public String destinationPath;
+    public boolean parameterizeAllClassNames = false;
+    public boolean useAggressiveSubstitutions = false;
+    public boolean useErgonomicShortcuts = true;
+    public boolean usePackageGrouping = true;
+    public boolean useBooleanFieldErgonomics = true;
+    public boolean reservePrimaryKeyIndexForTypeWithPrimaryKey = true;
+    public boolean useHollowPrimitiveTypes = true;
+    public boolean restrictApiToFieldType = true;
+    public boolean useVerboseToString = true;
 }

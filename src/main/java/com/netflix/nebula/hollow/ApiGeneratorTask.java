@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,11 @@ public class ApiGeneratorTask extends DefaultTask {
     private final String projectDirPath = projectDirFile.getAbsolutePath();
     private final String relativeJavaSourcesPath = "/src/main/java/";
     private final String javaSourcesPath = projectDirPath + relativeJavaSourcesPath;
-    private final String compiledClassesPath = projectDirPath + "/build/classes/main/";
+    //TODO: perhaps allow the users to configure these paths?
+    private final String[] compiledClassesPaths = {
+            projectDirPath + "/build/classes/main/",
+            projectDirPath + "/build/classes/java/main/",
+    };
 
     private URLClassLoader urlClassLoader;
 
@@ -55,17 +59,48 @@ public class ApiGeneratorTask extends DefaultTask {
             mapper.initializeTypeState(clazz);
         }
 
-        HollowAPIGenerator generator =
-                new HollowAPIGenerator(
-                        extension.apiClassName,
-                        extension.apiPackageName,
-                        writeEngine
-                );
+        String apiTargetPath = extension.destinationPath != null && extension.destinationPath.isEmpty() ? extension.destinationPath : buildPathToApiTargetFolder(extension.apiPackageName);
 
-        String apiTargetPath = buildPathToApiTargetFolder(extension.apiPackageName);
-
+        HollowAPIGenerator generator = buildHollowAPIGenerator(extension, writeEngine, apiTargetPath);
+        
         cleanupAndCreateFolders(apiTargetPath);
-        generator.generateFiles(apiTargetPath);
+        generator.generateSourceFiles();
+    }
+
+    private HollowAPIGenerator buildHollowAPIGenerator(ApiGeneratorExtension extension, HollowWriteStateEngine writeStateEngine, String apiTargetPath) {
+        HollowAPIGenerator.Builder builder = new HollowAPIGenerator.Builder()
+                .withAPIClassname(extension.apiClassName)
+                .withPackageName(extension.apiPackageName)
+                .withDataModel(writeStateEngine)
+                .withDestination(apiTargetPath)
+                .withParameterizeAllClassNames(extension.parameterizeAllClassNames)
+                .withAggressiveSubstitutions(extension.useAggressiveSubstitutions)
+                .withBooleanFieldErgonomics(extension.useBooleanFieldErgonomics)
+                .reservePrimaryKeyIndexForTypeWithPrimaryKey(extension.reservePrimaryKeyIndexForTypeWithPrimaryKey)
+                .withHollowPrimitiveTypes(extension.useHollowPrimitiveTypes)
+                .withVerboseToString(extension.useVerboseToString);
+
+        if(extension.getterPrefix != null && !extension.getterPrefix.isEmpty()) {
+            builder.withGetterPrefix(extension.getterPrefix);
+        }
+
+        if(extension.classPostfix != null && !extension.classPostfix.isEmpty()) {
+            builder.withClassPostfix(extension.classPostfix);
+        }
+
+        if(extension.useErgonomicShortcuts) {
+            builder.withErgonomicShortcuts();
+        }
+
+        if(extension.usePackageGrouping) {
+            builder.withPackageGrouping();
+        }
+
+        if(extension.restrictApiToFieldType) {
+            builder.withRestrictApiToFieldType();
+        }
+
+        return builder.build();
     }
 
     private Collection<Class<?>> extractClasses(List<String> packagesToScan) {
@@ -146,8 +181,10 @@ public class ApiGeneratorTask extends DefaultTask {
     }
 
     private void initClassLoader() throws MalformedURLException {
-        URL url = new File(compiledClassesPath).toURI().toURL();
-        URL[] urls = new URL[] { url };
+        URL[] urls = new URL[compiledClassesPaths.length];
+        for (int i=0; i < compiledClassesPaths.length; i++){
+            urls[i]= new File(compiledClassesPaths[i]).toURI().toURL() ;
+        }
         urlClassLoader = new URLClassLoader(urls);
     }
 
