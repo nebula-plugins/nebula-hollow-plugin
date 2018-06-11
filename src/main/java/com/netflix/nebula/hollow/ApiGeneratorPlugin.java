@@ -17,6 +17,8 @@ package com.netflix.nebula.hollow;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.PluginContainer;
 
 import java.net.URLClassLoader;
 import java.util.Collections;
@@ -31,13 +33,15 @@ public class ApiGeneratorPlugin implements Plugin<Project> {
      */
     @Override
     public void apply(Project project) {
-        Map<String, Object> taskPropertiesMap = new HashMap<>();
-        taskPropertiesMap.put("name", "generateHollowConsumerApi");
-        taskPropertiesMap.put("group", "hollow");
-        taskPropertiesMap.put("type", ApiGeneratorTask.class);
-        taskPropertiesMap.put("dependsOn", Collections.singletonList("build"));
-        project.getTasks().create(taskPropertiesMap);
-
-        project.getExtensions().create("hollow", ApiGeneratorExtension.class);
+        PluginContainer plugins = project.getPlugins();
+        if(plugins.hasPlugin(JavaPlugin.class)) {
+            Map<String, Object> taskPropertiesMap = new HashMap<>();
+            taskPropertiesMap.put("name", "generateHollowConsumerApi");
+            taskPropertiesMap.put("group", "hollow");
+            taskPropertiesMap.put("type", ApiGeneratorTask.class);
+            taskPropertiesMap.put("dependsOn", Collections.singletonList("build"));
+            project.getTasks().create(taskPropertiesMap);
+            project.getExtensions().create("hollow", ApiGeneratorExtension.class);
+        }
     }
 }

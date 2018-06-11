@@ -25,6 +25,7 @@ class ApiGeneratorIntegrationSpec extends IntegrationSpec {
     def 'plugin applies'() {
         given:
         buildFile << """
+        apply plugin: 'java'
         apply plugin: 'nebula.hollow'
         """
 
@@ -38,6 +39,7 @@ class ApiGeneratorIntegrationSpec extends IntegrationSpec {
     def 'generator task configures'() {
         given:
         buildFile << """
+        apply plugin: 'java'        
         apply plugin: 'nebula.hollow'
 
         hollow {
@@ -254,6 +256,78 @@ public class Movie {
 
         and:
         file.text.contains("_getId()")
+    }
+
+    def 'generateHollowConsumerApi task is not present if java plugin is not present'() {
+        given:
+        buildFile << """
+            apply plugin: 'nebula.hollow'
+                     
+            repositories {
+               jcenter()
+            }
+               
+            dependencies {
+                compile "com.netflix.hollow:hollow:3.+"
+            }
+        """.stripIndent()
+
+        when:
+        ExecutionResult result = runTasks('generateHollowConsumerApi')
+
+        then:
+        !result.success
+        result.failure.message.contains("Task 'generateHollowConsumerApi' not found in root project")
+    }
+
+    def 'generateHollowConsumerApi is not present if nebula plugin is loaded before java plugin'() {
+        given:
+        buildFile << """
+            apply plugin: 'nebula.hollow'
+            apply plugin: 'java'
+    
+            repositories {
+               jcenter()
+            }
+               
+            dependencies {
+                compile "com.netflix.hollow:hollow:3.+"
+            }
+        """.stripIndent()
+
+        when:
+        ExecutionResult result = runTasks('generateHollowConsumerApi')
+
+        then:
+        !result.success
+        result.failure.message.contains("Task 'generateHollowConsumerApi' not found in root project")
+    }
+
+    def 'execution fails if hollow block is present and plugin is not present'() {
+        given:
+        buildFile << """
+            apply plugin: 'nebula.hollow'
+            
+            hollow {
+                packagesToScan = ['com.netflix.nebula.hollow.test']
+                apiClassName = 'MovieAPI'
+                apiPackageName = 'com.netflix.nebula.hollow.test.api'
+            }
+                                 
+            repositories {
+               jcenter()
+            }
+               
+            dependencies {
+                compile "com.netflix.hollow:hollow:3.+"
+            }
+        """.stripIndent()
+
+        when:
+        ExecutionResult result = runTasks('generateHollowConsumerApi')
+
+        then:
+        !result.success
     }
 
     def getFile(String folder, String fileName) {
