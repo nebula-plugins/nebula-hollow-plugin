@@ -190,7 +190,7 @@ public class ApiGeneratorTask extends DefaultTask {
 
     private void validatePluginConfiguration(ApiGeneratorExtension extension) {
         if (extension.apiClassName == null || extension.apiPackageName == null || extension.packagesToScan.isEmpty()) {
-            throw new InvalidUserDataException("Specify buildscript as per plugin readme!");
+            throw new InvalidUserDataException("Specify buildscript as per plugin readme | apiClassName, apiPackageName and packagesToScan configuration values must be present");
         }
     }
 }
