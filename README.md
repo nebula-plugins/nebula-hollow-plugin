@@ -1,5 +1,10 @@
 =======
 # Hollow API Generator Nebula Plugin
+![Support Status](https://img.shields.io/badge/nebula-supported-brightgreen.svg)
+[![Build Status](https://travis-ci.org/nebula-plugins/nebula-hollow-plugin.svg?branch=master)](https://travis-ci.org/nebula-plugins/gradle-contacts-plugin)
+[![Coverage Status](https://coveralls.io/repos/nebula-plugins/nebula-hollow-plugin/badge.svg?branch=master&service=github)](https://coveralls.io/github/nebula-plugins/gradle-contacts-plugin?branch=master)
+[![Apache 2.0](https://img.shields.io/github/license/nebula-plugins/nebula-hollow-plugin.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+
 
 This plugin provides task for generating hollow consumer api, that is 
 described [here](http://hollow.how/getting-started/#consumer-api-generation)
