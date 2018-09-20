@@ -18,7 +18,7 @@ repositories {
 }
 
 ext {
-    hollowVersion = '3.0.0'
+    hollowVersion = '3.2.0'
 }
 
 dependencies {
