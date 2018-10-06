@@ -185,7 +185,7 @@ public class ApiGeneratorTask extends DefaultTask {
         for (int i=0; i < compiledClassesPaths.length; i++){
             urls[i]= new File(compiledClassesPaths[i]).toURI().toURL() ;
         }
-        urlClassLoader = new URLClassLoader(urls);
+        urlClassLoader = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
     }
 
     private void validatePluginConfiguration(ApiGeneratorExtension extension) {
