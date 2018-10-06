@@ -147,7 +147,9 @@ public class Actor {
             '/core/SetOfActorTypeAPI.java',
             '/core/ActorDelegateLookupImpl.java',
             '/core/MovieAPIFactory.java',
-            '/index/MovieAPIHashIndex.java'
+            '/index/MovieAPIHashIndex.java',
+            '/index/MoviePrimaryKeyIndex.java',
+            '/index/MovieUniqueKeyIndex.java'
         ].forEach { fileName ->
             assert getFile(destinationSrcFolder, fileName).exists()
         }
