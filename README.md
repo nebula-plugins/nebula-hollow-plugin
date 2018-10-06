@@ -17,7 +17,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "com.netflix.nebula:nebula-hollow-plugin:0.1"
+        classpath "com.netflix.nebula:nebula-hollow-plugin:1.+"
     }
 }
 ```
