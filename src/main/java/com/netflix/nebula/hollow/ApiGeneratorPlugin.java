@@ -73,8 +73,12 @@ public class ApiGeneratorPlugin implements Plugin<Project> {
             });
 
             project.getTasks().register("cleanDataModelApi", Delete.class, deleteTask -> {
-                String dataModelApiPath = !extension.destinationPath.isEmpty() ? extension.destinationPath
-                    : extension.apiPackageName.replace(".", "/");
+                if (!extension.destinationPath.isEmpty()) {
+                    deleteTask.delete(extension.destinationPath);
+                    return;
+                }
+
+                String dataModelApiPath = extension.apiPackageName.replace(".", "/");
 
                 List<String> paths = mainSourceSet.getJava().getSrcDirs()
                     .stream()
