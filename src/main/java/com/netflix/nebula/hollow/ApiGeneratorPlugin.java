@@ -15,33 +15,78 @@
  */
 package com.netflix.nebula.hollow;
 
+import com.netflix.hollow.core.write.objectmapper.HollowObjectMapper;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.tasks.Delete;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.compile.JavaCompile;
 
+import java.io.File;
 import java.net.URLClassLoader;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ApiGeneratorPlugin implements Plugin<Project> {
 
     /**
      * Task depends on build, because we need .class files for {@link URLClassLoader} to load them to
-     * {@link com.netflix.hollow.core.write.objectmapper.HollowObjectMapper}
+     * {@link HollowObjectMapper}
      */
     @Override
     public void apply(Project project) {
         PluginContainer plugins = project.getPlugins();
-        if(plugins.hasPlugin(JavaPlugin.class)) {
+
+        if (plugins.hasPlugin(JavaPlugin.class)) {
             Map<String, Object> taskPropertiesMap = new HashMap<>();
+
             taskPropertiesMap.put("name", "generateHollowConsumerApi");
             taskPropertiesMap.put("group", "hollow");
             taskPropertiesMap.put("type", ApiGeneratorTask.class);
-            taskPropertiesMap.put("dependsOn", Collections.singletonList("build"));
-            project.getTasks().create(taskPropertiesMap);
-            project.getExtensions().create("hollow", ApiGeneratorExtension.class);
+
+            Task generateTask = project.getTasks().create(taskPropertiesMap);
+            ApiGeneratorExtension extension = project.getExtensions().create("hollow", ApiGeneratorExtension.class);
+
+            JavaPluginConvention javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
+            SourceSet mainSourceSet = javaPluginConvention.getSourceSets().getByName("main");
+
+            project.getTasks().register("compileDataModel", JavaCompile.class, javaCompile -> {
+                List<String> packages = extension.packagesToScan
+                    .stream()
+                    .map(pkg -> pkg.replace(".", "/") + "/**")
+                    .collect(Collectors.toList());
+
+                File destinationDir = mainSourceSet.getOutput().getClassesDirs()
+                    .filter(file -> file.toString().contains("java"))
+                    .getSingleFile();
+
+                javaCompile.setSource(mainSourceSet.getJava().getSrcDirs());
+                javaCompile.include(packages);
+                javaCompile.setClasspath(mainSourceSet.getCompileClasspath());
+                javaCompile.setDestinationDir(destinationDir);
+            });
+
+            project.getTasks().register("cleanDataModelApi", Delete.class, deleteTask -> {
+                String dataModelApiPath = !extension.destinationPath.isEmpty() ? extension.destinationPath
+                    : extension.apiPackageName.replace(".", "/");
+
+                List<String> paths = mainSourceSet.getJava().getSrcDirs()
+                    .stream()
+                    .map(srcDir -> srcDir.toPath().resolve(dataModelApiPath).toString())
+                    .collect(Collectors.toList());
+
+                deleteTask.delete(paths);
+            });
+
+            generateTask.dependsOn("compileDataModel");
+            project.getTasks().getByName("compileJava").dependsOn(generateTask);
+            project.getTasks().getByName("clean").dependsOn("cleanDataModelApi");
         }
     }
 }
