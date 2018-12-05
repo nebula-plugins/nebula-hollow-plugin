@@ -358,7 +358,7 @@ public class Movie {
 
         then:
         !result.success
-        result.standardOutput.contains('Specify buildscript as per plugin readme | apiClassName, apiPackageName and packagesToScan configuration values must be present')
+        result.standardError.contains('Specify buildscript as per plugin readme | apiClassName, apiPackageName and packagesToScan configuration values must be present')
     }
 
 
