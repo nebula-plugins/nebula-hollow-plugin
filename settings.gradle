@@ -1,4 +1,2 @@
 rootProject.name = 'nebula-hollow-plugin'
 
-enableFeaturePreview('STABLE_PUBLISHING')
-
