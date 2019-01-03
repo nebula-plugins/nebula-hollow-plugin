@@ -25,6 +25,10 @@ contacts {
         moniker 'Igor Perikov'
         github 'IgorPerikov'
     }
+    'roberto@perezalcolea.info' {
+        moniker 'Roberto Perez Alcolea'
+        github 'rpalcolea'
+    }
 }
 
 sourceCompatibility = 1.8
