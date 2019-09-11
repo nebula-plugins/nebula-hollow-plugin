@@ -8,5 +8,4 @@
 **.iml
 **.iws
 .idea
-gradle.properties
 out/
