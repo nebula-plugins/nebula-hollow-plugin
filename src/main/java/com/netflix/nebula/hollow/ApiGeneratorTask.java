@@ -33,13 +33,6 @@ public class ApiGeneratorTask extends DefaultTask {
 
     private final File projectDirFile = getProject().getProjectDir();
     private final String projectDirPath = projectDirFile.getAbsolutePath();
-    private final String relativeJavaSourcesPath = "/src/main/java/";
-    private final String javaSourcesPath = projectDirPath + relativeJavaSourcesPath;
-    //TODO: perhaps allow the users to configure these paths?
-    private final String[] compiledClassesPaths = {
-            projectDirPath + "/build/classes/main/",
-            projectDirPath + "/build/classes/java/main/",
-    };
 
     private URLClassLoader urlClassLoader;
 
@@ -48,18 +41,23 @@ public class ApiGeneratorTask extends DefaultTask {
         ApiGeneratorExtension extension = getProject().getExtensions().getByType(ApiGeneratorExtension.class);
         validatePluginConfiguration(extension);
 
-        initClassLoader();
+        initClassLoader(extension.relativeCompileClassPaths);
+
+        String absoluteSourcesPath = projectDirFile.getAbsolutePath() + extension.relativeSourcesPath;
+        String absoluteDestinationPath = projectDirFile.getAbsolutePath() + extension.relativeDestinationPath;
 
         HollowWriteStateEngine writeEngine = new HollowWriteStateEngine();
         HollowObjectMapper mapper = new HollowObjectMapper(writeEngine);
 
-        Collection<Class<?>> datamodelClasses = extractClasses(extension.packagesToScan);
+        Collection<Class<?>> datamodelClasses = extractClasses(extension.packagesToScan, absoluteSourcesPath,
+            extension.sourcesExtension, extension.filesToExclude);
         for (Class<?> clazz : datamodelClasses) {
             getLogger().debug("Initialize schema for class {}", clazz.getName());
             mapper.initializeTypeState(clazz);
         }
 
-        String apiTargetPath = extension.destinationPath != null && extension.destinationPath.isEmpty() ? extension.destinationPath : buildPathToApiTargetFolder(extension.apiPackageName);
+        String apiTargetPath = extension.relativeDestinationPath != null && extension.relativeDestinationPath.isEmpty() ?
+            extension.relativeDestinationPath : buildPathToApiTargetFolder(absoluteDestinationPath, extension.apiPackageName);
 
         HollowAPIGenerator generator = buildHollowAPIGenerator(extension, writeEngine, apiTargetPath);
         
@@ -103,24 +101,26 @@ public class ApiGeneratorTask extends DefaultTask {
         return builder.build();
     }
 
-    private Collection<Class<?>> extractClasses(List<String> packagesToScan) {
+    private Collection<Class<?>> extractClasses(List<String> packagesToScan, String absoluteSourcesPath,
+                                                String sourcesExtension, List<String> filesToExclude) {
         Set<Class<?>> classes = new HashSet<>();
 
         for (String packageToScan : packagesToScan) {
-            File packageFile = buildPackageFile(packageToScan);
+            File packageFile = buildPackageFile(absoluteSourcesPath, packageToScan);
 
             List<File> allFilesInPackage = findFilesRecursively(packageFile);
             List<String> classNames = new ArrayList<>();
             for (File file : allFilesInPackage) {
                 String filePath = file.getAbsolutePath();
                 getLogger().debug("Candidate for schema initialization {}", filePath);
-                if (filePath.endsWith(".java") &&
-                        !filePath.endsWith("package-info.java") &&
-                        !filePath.endsWith("module-info.java")
-                        ) {
-                    String relativeFilePath = removeSubstrings(filePath, projectDirPath, relativeJavaSourcesPath);
-                    classNames.add(convertFolderPathToPackageName(removeSubstrings(relativeFilePath, ".java")));
+                if (filePath.endsWith(sourcesExtension) && filesToExclude.stream().noneMatch(filePath::endsWith)) {
+                    String relativeFilePath = removeSubstrings(filePath, absoluteSourcesPath);
+                    classNames.add(convertFolderPathToPackageName(removeSubstrings(relativeFilePath, sourcesExtension)));
                 }
+            }
+
+            if (classNames.isEmpty()) {
+                getLogger().warn("No data model classes have been found.");
             }
 
             for (String fqdn : classNames) {
@@ -149,12 +149,12 @@ public class ApiGeneratorTask extends DefaultTask {
         return foundFiles;
     }
 
-    private File buildPackageFile(String packageName) {
-        return new File(javaSourcesPath + convertPackageNameToFolderPath(packageName));
+    private File buildPackageFile(String absoluteSourcesPath, String packageName) {
+        return new File(absoluteSourcesPath + convertPackageNameToFolderPath(packageName));
     }
 
-    private String buildPathToApiTargetFolder(String apiPackageName) {
-        return javaSourcesPath + convertPackageNameToFolderPath(apiPackageName);
+    private String buildPathToApiTargetFolder(String destinationPath, String apiPackageName) {
+        return destinationPath + convertPackageNameToFolderPath(apiPackageName);
     }
 
     private String convertPackageNameToFolderPath(String packageName) {
@@ -180,10 +180,10 @@ public class ApiGeneratorTask extends DefaultTask {
         }
     }
 
-    private void initClassLoader() throws MalformedURLException {
-        URL[] urls = new URL[compiledClassesPaths.length];
-        for (int i=0; i < compiledClassesPaths.length; i++){
-            urls[i]= new File(compiledClassesPaths[i]).toURI().toURL() ;
+    private void initClassLoader(List<String> relativeCompileClassPaths) throws MalformedURLException {
+        URL[] urls = new URL[relativeCompileClassPaths.size()];
+        for (int i=0; i < relativeCompileClassPaths.size(); i++){
+            urls[i]= new File(projectDirPath + relativeCompileClassPaths.get(i)).toURI().toURL() ;
         }
         urlClassLoader = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
     }
