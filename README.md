@@ -54,6 +54,11 @@ optional values:
 - `useHollowPrimitiveTypes` - specify to use Hollow Primitive Types instead of generating them per project. defaults to `true`
 - `restrictApiToFieldType` - api code only generates `get<FieldName>` with return type as per schema. defaults to `true`
 - `useVerboseToString` - will implement `toString()` method for hollow objects with `HollowRecordStringifier().stringify(this)`. defaults to `true`
+- `sourcesExtension` - the extension of your data classes. defaults to `".java"`
+- `filesToExclude` - files to exclude when scanning for data classes. defaults to `["package-info.java", "module-info.java"]`
+- `relativeCompileClassPaths` - the relative classpath of your compiled classes. defaults to `["/build/classes/main/", "/build/classes/java/main/"]`
+- `relativeDestinationPath` - the relative path to the api-related sources will be generated. defaults to `"/src/main/java/"`
+- `relativeSourcesPath` - the relative path to your data classes. defaults to `"/src/main/java/"`
 
 For more information, please refer to [`AbstractHollowAPIGeneratorBuilder`](https://github.com/Netflix/hollow/blob/master/hollow/src/main/java/com/netflix/hollow/api/codegen/AbstractHollowAPIGeneratorBuilder.java)
 launch task:
