@@ -155,6 +155,103 @@ public class Actor {
         }
     }
 
+    def 'execution of generator task is successful for Kotlin model classes'() {
+        given:
+        String destinationSrcFolder = '/src/main/java/com/netflix/nebula/hollow/test/api'
+        buildFile << """
+            buildscript {
+                ext.kotlin_version = '1.3.61'
+                
+                repositories {
+                    mavenCentral()
+                }
+                
+                dependencies {
+                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:\$kotlin_version"
+                }
+            }
+            
+            apply plugin: 'java'
+            apply plugin: 'kotlin'
+            apply plugin: 'nebula.hollow'
+            
+            sourceCompatibility = 1.8
+                        
+            hollow {
+                packagesToScan = ['com.netflix.nebula.hollow.test']
+                apiClassName = 'MovieAPI'
+                apiPackageName = 'com.netflix.nebula.hollow.test.api'
+                
+                sourcesExtension = '.kt'
+                filesToExclude = []
+                relativeCompileClassPaths = ['/build/classes/main/', '/build/classes/kotlin/main/']
+                relativeSourcesPath = '/src/main/kotlin/'
+            }
+                     
+            repositories {
+               jcenter()
+            }
+               
+            dependencies {
+                compile "com.netflix.hollow:hollow:3.+"
+                compile "org.jetbrains.kotlin:kotlin-stdlib:\$kotlin_version"
+            }
+        """.stripIndent()
+
+        def moviefile = createFile('src/main/kotlin/com/netflix/nebula/hollow/test/Movie.kt')
+        moviefile << """package com.netflix.nebula.hollow.test;
+
+import com.netflix.hollow.core.write.objectmapper.HollowPrimaryKey;
+
+@HollowPrimaryKey(fields=["id"])
+data class Movie(val id: Long,
+                 val title: String,
+                 val releaseYear: Int,
+                 val actors: Set<Actor>)
+        """.stripIndent()
+
+        def authorFile = createFile('src/main/kotlin/com/netflix/nebula/hollow/test/Actor.kt')
+        authorFile << """package com.netflix.nebula.hollow.test;
+
+data class Actor(val name: String)
+ """.stripIndent()
+
+        when:
+        ExecutionResult result = runTasks('generateHollowConsumerApi')
+
+        then:
+        result.success
+
+        and:
+        [
+            '/Movie.java',
+            '/Actor.java',
+            '/MovieAPI.java',
+            '/accessor/ActorDataAccessor.java',
+            '/accessor/MovieDataAccessor.java',
+            '/collections/SetOfActor.java',
+            '/core/ActorDelegate.java',
+            '/core/ActorDelegateCachedImpl.java',
+            '/core/ActorHollowFactory.java',
+            '/core/ActorTypeAPI.java',
+            '/core/MovieAPIFactory.java',
+            '/core/MovieDelegate.java',
+            '/core/MovieDelegateCachedImpl.java',
+            '/core/MovieDelegateLookupImpl.java',
+            '/core/MovieHollowFactory.java',
+            '/core/MovieTypeAPI.java',
+            '/core/SetOfActorHollowFactory.java',
+            '/core/SetOfActorTypeAPI.java',
+            '/core/ActorDelegateLookupImpl.java',
+            '/core/MovieAPIFactory.java',
+            '/index/MovieAPIHashIndex.java',
+            '/index/MoviePrimaryKeyIndex.java',
+            '/index/MovieUniqueKeyIndex.java'
+        ].forEach { fileName ->
+            assert getFile(destinationSrcFolder, fileName).exists()
+        }
+    }
+
     def 'execution of generator - add class postfix'() {
         given:
         String destinationSrcFolder = '/src/main/java/com/netflix/nebula/hollow/test/postfix/api'

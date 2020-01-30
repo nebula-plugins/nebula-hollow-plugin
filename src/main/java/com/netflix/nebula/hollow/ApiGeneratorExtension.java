@@ -15,6 +15,7 @@
  */
 package com.netflix.nebula.hollow;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class ApiGeneratorExtension {
@@ -24,7 +25,11 @@ public class ApiGeneratorExtension {
     public String apiPackageName;
     public String getterPrefix;
     public String classPostfix;
-    public String destinationPath;
+    public String sourcesExtension = ".java";
+    public List<String> filesToExclude = Arrays.asList("package-info.java", "module-info.java");
+    public List<String> relativeCompileClassPaths = Arrays.asList("/build/classes/main/", "/build/classes/java/main/");
+    public String relativeDestinationPath = "/src/main/java/";
+    public String relativeSourcesPath = "/src/main/java/";
     public boolean parameterizeAllClassNames = false;
     public boolean useAggressiveSubstitutions = false;
     public boolean useErgonomicShortcuts = true;
