@@ -59,7 +59,7 @@ public class ApiGeneratorTask extends DefaultTask {
             mapper.initializeTypeState(clazz);
         }
 
-        String apiTargetPath = extension.destinationPath != null && extension.destinationPath.isEmpty() ? extension.destinationPath : buildPathToApiTargetFolder(extension.apiPackageName);
+        String apiTargetPath = !extension.destinationPath.isEmpty() ? extension.destinationPath : buildPathToApiTargetFolder(extension.apiPackageName);
 
         HollowAPIGenerator generator = buildHollowAPIGenerator(extension, writeEngine, apiTargetPath);
         

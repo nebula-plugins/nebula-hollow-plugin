@@ -24,7 +24,7 @@ public class ApiGeneratorExtension {
     public String apiPackageName;
     public String getterPrefix;
     public String classPostfix;
-    public String destinationPath;
+    public String destinationPath = "";
     public boolean parameterizeAllClassNames = false;
     public boolean useAggressiveSubstitutions = false;
     public boolean useErgonomicShortcuts = true;
