@@ -18,7 +18,7 @@ plugins {
     id 'java'
 }
 
-description 'Povides a task for generating hollow consumer api'
+description 'Provides a task for generating hollow consumer api'
 
 contacts {
     'perikov.igor@gmail.com' {
@@ -43,10 +43,6 @@ dependencies {
     implementation gradleApi()
     implementation localGroovy()
     implementation "com.netflix.hollow:hollow:latest.release"
-}
-
-dependencyLocking {
-    lockAllConfigurations()
 }
 
 pluginBundle {
