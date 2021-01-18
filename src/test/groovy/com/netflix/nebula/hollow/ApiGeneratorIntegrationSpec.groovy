@@ -76,7 +76,7 @@ class ApiGeneratorIntegrationSpec extends IntegrationSpec {
             }
                
             dependencies {
-                compile "com.netflix.hollow:hollow:3.+"
+                implementation "com.netflix.hollow:hollow:3.+"
             }
         """.stripIndent()
 
@@ -176,7 +176,7 @@ public class Actor {
             }
                
             dependencies {
-                compile "com.netflix.hollow:hollow:3.+"
+                implementation "com.netflix.hollow:hollow:3.+"
             }
         """.stripIndent()
 
@@ -226,7 +226,7 @@ public class Movie {
             }
                
             dependencies {
-                compile "com.netflix.hollow:hollow:3.+"
+                implementation "com.netflix.hollow:hollow:3.+"
             }
         """.stripIndent()
 
@@ -270,7 +270,7 @@ public class Movie {
             }
                
             dependencies {
-                compile "com.netflix.hollow:hollow:3.+"
+                implementation "com.netflix.hollow:hollow:3.+"
             }
         """.stripIndent()
 
@@ -292,7 +292,7 @@ public class Movie {
             }
                
             dependencies {
-                compile "com.netflix.hollow:hollow:3.+"
+                implementation "com.netflix.hollow:hollow:3.+"
             }
         """.stripIndent()
 
@@ -320,7 +320,7 @@ public class Movie {
             }
                
             dependencies {
-                compile "com.netflix.hollow:hollow:3.+"
+                implementation "com.netflix.hollow:hollow:3.+"
             }
         """.stripIndent()
 
@@ -348,7 +348,7 @@ public class Movie {
             }
                
             dependencies {
-                compile "com.netflix.hollow:hollow:3.+"
+                implementation "com.netflix.hollow:hollow:3.+"
             }
         """.stripIndent()
 
