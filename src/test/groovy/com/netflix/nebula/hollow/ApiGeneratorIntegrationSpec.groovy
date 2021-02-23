@@ -72,7 +72,7 @@ class ApiGeneratorIntegrationSpec extends IntegrationSpec {
             }
                      
             repositories {
-               jcenter()
+               mavenCentral()
             }
                
             dependencies {
@@ -172,7 +172,7 @@ public class Actor {
             }
                      
             repositories {
-               jcenter()
+               mavenCentral()
             }
                
             dependencies {
@@ -222,7 +222,7 @@ public class Movie {
             }
                      
             repositories {
-               jcenter()
+               mavenCentral()
             }
                
             dependencies {
@@ -266,7 +266,7 @@ public class Movie {
             apply plugin: 'nebula.hollow'
                      
             repositories {
-               jcenter()
+               mavenCentral()
             }
                
             dependencies {
@@ -288,7 +288,7 @@ public class Movie {
             apply plugin: 'java'
     
             repositories {
-               jcenter()
+               mavenCentral()
             }
                
             dependencies {
@@ -316,7 +316,7 @@ public class Movie {
             }
                                  
             repositories {
-               jcenter()
+               mavenCentral()
             }
                
             dependencies {
@@ -344,7 +344,7 @@ public class Movie {
             }
                      
             repositories {
-               jcenter()
+               mavenCentral()
             }
                
             dependencies {

@@ -14,7 +14,7 @@ In order to use, add plugin dependency to your buildscript
 ```
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath "com.netflix.nebula:nebula-hollow-plugin:1.+"
