@@ -1,9 +1,12 @@
 =======
 # Hollow API Generator Nebula Plugin
-![Support Status](https://img.shields.io/badge/nebula-supported-brightgreen.svg)
-[![Build Status](https://travis-ci.com/nebula-plugins/nebula-hollow-plugin.svg?branch=master)](https://travis-ci.com/nebula-plugins/nebula-hollow-plugin)
-[![Coverage Status](https://coveralls.io/repos/nebula-plugins/nebula-hollow-plugin/badge.svg?branch=master&service=github)](https://coveralls.io/github/nebula-plugins/gradle-contacts-plugin?branch=master)
+![Support Status](https://img.shields.io/badge/nebula-active-green.svg)
+[![Gradle Plugin Portal](https://img.shields.io/maven-metadata/v/https/plugins.gradle.org/m2/com.netflix.nebula/nebula-hollow-plugin/maven-metadata.xml.svg?label=gradlePluginPortal)](https://plugins.gradle.org/plugin/nebula.hollow)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.netflix.nebula/nebula-hollow-plugin/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.netflix.nebula/nebula-hollow-plugin)
+![CI](https://github.com/nebula-plugins/nebula-hollow-plugin/actions/workflows/ci.yml/badge.svg)
+![Publish](https://github.com/nebula-plugins/nebula-hollow-plugin/actions/workflows/publish.yml/badge.svg)
 [![Apache 2.0](https://img.shields.io/github/license/nebula-plugins/nebula-hollow-plugin.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+
 
 
 This plugin provides task for generating hollow consumer api, that is 
