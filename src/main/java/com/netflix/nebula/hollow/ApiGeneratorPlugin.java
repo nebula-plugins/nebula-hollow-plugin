@@ -69,7 +69,7 @@ public class ApiGeneratorPlugin implements Plugin<Project> {
                 javaCompile.setSource(mainSourceSet.getJava().getSrcDirs());
                 javaCompile.include(packages);
                 javaCompile.setClasspath(mainSourceSet.getCompileClasspath());
-                javaCompile.setDestinationDir(destinationDir);
+                javaCompile.getDestinationDirectory().set(destinationDir);
             });
 
             project.getTasks().register("cleanDataModelApi", Delete.class, deleteTask -> {
