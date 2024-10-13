@@ -79,6 +79,9 @@ public class ApiGeneratorTask extends DefaultTask {
                 .reservePrimaryKeyIndexForTypeWithPrimaryKey(extension.reservePrimaryKeyIndexForTypeWithPrimaryKey)
                 .withHollowPrimitiveTypes(extension.useHollowPrimitiveTypes)
                 .withVerboseToString(extension.useVerboseToString);
+        if (extension.useGeneratedAnnotation) {
+            builder.withGeneratedAnnotation();
+        }
 
         if(extension.getterPrefix != null && !extension.getterPrefix.isEmpty()) {
             builder.withGetterPrefix(extension.getterPrefix);

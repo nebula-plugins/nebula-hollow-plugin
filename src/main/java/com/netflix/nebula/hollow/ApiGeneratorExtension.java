@@ -34,4 +34,5 @@ public class ApiGeneratorExtension {
     public boolean useHollowPrimitiveTypes = true;
     public boolean restrictApiToFieldType = true;
     public boolean useVerboseToString = true;
+    public boolean useGeneratedAnnotation = false;
 }
