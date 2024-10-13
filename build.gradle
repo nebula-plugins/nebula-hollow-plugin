@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 plugins {
-    id 'nebula.plugin-plugin' version '16.0.1'
+    id 'com.netflix.nebula.release' version '17.2.2'
+    id 'nebula.plugin-plugin' version '17.1.0'
     id 'java'
 }
 
@@ -42,12 +43,20 @@ dependencies {
 }
 
 pluginBundle {
+    tags = ['hollow', 'nebula']
+}
+
+gradlePlugin {
     plugins {
         hollow {
             id = 'nebula.hollow'
             displayName = 'Nebula Hollow Plugin'
             description = project.description
-            tags = ['hollow', 'nebula']
+            implementationClass = 'com.netflix.nebula.hollow.ApiGeneratorPlugin'
         }
     }
+}
+
+tasks.withType(Copy).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }
