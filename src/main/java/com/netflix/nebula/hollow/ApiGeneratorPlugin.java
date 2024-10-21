@@ -20,7 +20,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.Delete;
 import org.gradle.api.tasks.SourceSet;
@@ -53,8 +53,8 @@ public class ApiGeneratorPlugin implements Plugin<Project> {
             Task generateTask = project.getTasks().create(taskPropertiesMap);
             ApiGeneratorExtension extension = project.getExtensions().create("hollow", ApiGeneratorExtension.class);
 
-            JavaPluginConvention javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
-            SourceSet mainSourceSet = javaPluginConvention.getSourceSets().getByName("main");
+            JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
+            SourceSet mainSourceSet = javaPluginExtension.getSourceSets().getByName("main");
 
             project.getTasks().register("compileDataModel", JavaCompile.class, javaCompile -> {
                 List<String> packages = extension.packagesToScan

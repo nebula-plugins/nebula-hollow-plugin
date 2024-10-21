@@ -260,6 +260,76 @@ public class Movie {
         file.text.contains("_getId()")
     }
 
+    def 'execution of generator - with generated annotations'() {
+        given:
+        String destinationSrcFolder = '/src/main/java/com/netflix/nebula/hollow/test/generatedannotations/api'
+        buildFile << """
+            apply plugin: 'java'
+            apply plugin: 'nebula.hollow'
+            
+            sourceCompatibility = 1.8
+            
+            hollow {
+                packagesToScan = ['com.netflix.nebula.hollow.test.generatedannotations']
+                apiClassName = 'MovieAPI'
+                apiPackageName = 'com.netflix.nebula.hollow.test.generatedannotations.api'
+                useGeneratedAnnotation = true
+            }
+                     
+            repositories {
+               mavenCentral()
+            }
+               
+            dependencies {
+                implementation "com.netflix.hollow:hollow:3.+"
+            }
+        """.stripIndent()
+
+        def moviefile = createFile('src/main/java/com/netflix/nebula/hollow/test/generatedannotations/Movie.java')
+        moviefile << """package com.netflix.nebula.hollow.test.generatedannotations;
+
+import com.netflix.hollow.core.write.objectmapper.HollowPrimaryKey;
+
+@HollowPrimaryKey(fields={"id"})
+public class Movie {
+    long id;
+    
+    public Movie(long id) {
+        this.id = id;
+      
+    }
+}
+        """.stripIndent()
+
+        when:
+        ExecutionResult result = runTasks('generateHollowConsumerApi')
+
+        then:
+        result.success
+
+        and:
+        [
+                '/Movie.java',
+                '/MovieAPI.java',
+                '/accessor/MovieDataAccessor.java',
+                '/core/MovieAPIFactory.java',
+                '/core/MovieDelegate.java',
+                '/core/MovieDelegateCachedImpl.java',
+                '/core/MovieDelegateLookupImpl.java',
+                '/core/MovieHollowFactory.java',
+                '/core/MovieTypeAPI.java',
+                '/core/MovieAPIFactory.java',
+                '/index/MovieAPIHashIndex.java',
+                '/index/MoviePrimaryKeyIndex.java',
+                '/index/MovieUniqueKeyIndex.java'
+        ].forEach { fileName ->
+            File file = getFile(destinationSrcFolder, fileName)
+            file.exists()
+            and:
+            file.text.contains("@HollowGenerated")
+        }
+    }
+
     def 'generateHollowConsumerApi task is not present if java plugin is not present'() {
         given:
         buildFile << """
