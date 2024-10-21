@@ -15,33 +15,35 @@
  */
 package com.netflix.nebula.hollow
 
-import nebula.test.IntegrationSpec
-import nebula.test.functional.ExecutionResult
+import nebula.test.IntegrationTestKitSpec
+import org.gradle.testkit.runner.TaskOutcome
 import spock.lang.Subject
 
 @Subject(ApiGeneratorTask)
-class ApiGeneratorIntegrationSpec extends IntegrationSpec {
+class ApiGeneratorIntegrationSpec extends IntegrationTestKitSpec {
 
+    def setup() {
+        System.setProperty('ignoreDeprecations', 'true')
+    }
     def 'plugin applies'() {
         given:
         buildFile << """
-        apply plugin: 'java'
-        apply plugin: 'nebula.hollow'
+        plugins {
+            id 'java'
+            id 'com.netflix.nebula.hollow'
+        }
         """
-
-        when:
-        runTasksSuccessfully('help')
-
-        then:
-        noExceptionThrown()
+        expect:
+        runTasks('help')
     }
 
     def 'generator task configures'() {
         given:
         buildFile << """
-        apply plugin: 'java'        
-        apply plugin: 'nebula.hollow'
-
+        plugins {
+            id 'java'
+            id 'com.netflix.nebula.hollow'
+        }
         hollow {
             packagesToScan = ['org.package1']
             apiClassName = 'MyApiClassName'
@@ -49,22 +51,19 @@ class ApiGeneratorIntegrationSpec extends IntegrationSpec {
         }
         """
 
-        when:
-        runTasksSuccessfully('help')
-
-        then:
-        noExceptionThrown()
+        expect:
+        runTasks('help')
     }
 
     def 'execution of generator task is successful'() {
         given:
         String destinationSrcFolder = '/src/main/java/com/netflix/nebula/hollow/test/api'
         buildFile << """
-            apply plugin: 'java'
-            apply plugin: 'nebula.hollow'
-            
-            sourceCompatibility = 1.8
-            
+            plugins {
+                id 'java'
+                id 'com.netflix.nebula.hollow'
+            }
+                        
             hollow {
                 packagesToScan = ['com.netflix.nebula.hollow.test']
                 apiClassName = 'MovieAPI'
@@ -120,10 +119,10 @@ public class Actor {
  """.stripIndent()
 
         when:
-        ExecutionResult result = runTasks('generateHollowConsumerApi')
+        def result = runTasks('generateHollowConsumerApi')
 
         then:
-        result.success
+        result.task(':generateHollowConsumerApi').outcome == TaskOutcome.SUCCESS
 
         and:
         [
@@ -159,11 +158,11 @@ public class Actor {
         given:
         String destinationSrcFolder = '/src/main/java/com/netflix/nebula/hollow/test/postfix/api'
         buildFile << """
-            apply plugin: 'java'
-            apply plugin: 'nebula.hollow'
-            
-            sourceCompatibility = 1.8
-            
+            plugins {
+                id 'java'
+                id 'com.netflix.nebula.hollow'
+            }
+                        
             hollow {
                 packagesToScan = ['com.netflix.nebula.hollow.test.postfix']
                 apiClassName = 'MovieAPI'
@@ -196,10 +195,10 @@ public class Movie {
         """.stripIndent()
 
         when:
-        ExecutionResult result = runTasks('generateHollowConsumerApi')
+        def result = runTasks('generateHollowConsumerApi')
 
         then:
-        result.success
+        result.task(':generateHollowConsumerApi').outcome == TaskOutcome.SUCCESS
 
         and:
         getFile(destinationSrcFolder, '/MovieHollow.java').exists()
@@ -209,10 +208,10 @@ public class Movie {
         given:
         String destinationSrcFolder = '/src/main/java/com/netflix/nebula/hollow/test/getterprefix/api'
         buildFile << """
-            apply plugin: 'java'
-            apply plugin: 'nebula.hollow'
-            
-            sourceCompatibility = 1.8
+            plugins {
+                id 'java'
+                id 'com.netflix.nebula.hollow'
+            }
             
             hollow {
                 packagesToScan = ['com.netflix.nebula.hollow.test.getterprefix']
@@ -247,10 +246,10 @@ public class Movie {
         """.stripIndent()
 
         when:
-        ExecutionResult result = runTasks('generateHollowConsumerApi')
+        def result = runTasks('generateHollowConsumerApi')
 
         then:
-        result.success
+        result.task(':generateHollowConsumerApi').outcome == TaskOutcome.SUCCESS
 
         and:
         File file = getFile(destinationSrcFolder, '/Movie.java')
@@ -264,10 +263,10 @@ public class Movie {
         given:
         String destinationSrcFolder = '/src/main/java/com/netflix/nebula/hollow/test/generatedannotations/api'
         buildFile << """
-            apply plugin: 'java'
-            apply plugin: 'nebula.hollow'
-            
-            sourceCompatibility = 1.8
+            plugins {
+                id 'java'
+                id 'com.netflix.nebula.hollow'
+            }
             
             hollow {
                 packagesToScan = ['com.netflix.nebula.hollow.test.generatedannotations']
@@ -302,10 +301,10 @@ public class Movie {
         """.stripIndent()
 
         when:
-        ExecutionResult result = runTasks('generateHollowConsumerApi')
+        def result = runTasks('generateHollowConsumerApi')
 
         then:
-        result.success
+        result.task(':generateHollowConsumerApi').outcome == TaskOutcome.SUCCESS
 
         and:
         [
@@ -333,7 +332,9 @@ public class Movie {
     def 'generateHollowConsumerApi task is not present if java plugin is not present'() {
         given:
         buildFile << """
-            apply plugin: 'nebula.hollow'
+            plugins {
+                id 'com.netflix.nebula.hollow'
+            }
                      
             repositories {
                mavenCentral()
@@ -344,18 +345,17 @@ public class Movie {
             }
         """.stripIndent()
 
-        when:
-        ExecutionResult result = runTasks('generateHollowConsumerApi')
-
-        then:
-        !result.success
+        expect:
+        runTasksAndFail('generateHollowConsumerApi')
     }
 
     def 'generateHollowConsumerApi is not present if nebula plugin is loaded before java plugin'() {
         given:
         buildFile << """
-            apply plugin: 'nebula.hollow'
-            apply plugin: 'java'
+            plugins {
+                id 'com.netflix.nebula.hollow'
+                id 'java'
+            }
     
             repositories {
                mavenCentral()
@@ -367,17 +367,19 @@ public class Movie {
         """.stripIndent()
 
         when:
-        ExecutionResult result = runTasks('generateHollowConsumerApi')
+        def result = runTasksAndFail('generateHollowConsumerApi')
 
         then:
-        !result.success
-        result.failure.message.contains("Task 'generateHollowConsumerApi' not found in root project")
+        result.output.contains("Task 'generateHollowConsumerApi' not found in root project")
     }
 
     def 'execution fails if hollow block is present and plugin is not present'() {
         given:
         buildFile << """
-            apply plugin: 'nebula.hollow'
+            plugins {
+                id 'com.netflix.nebula.hollow'
+                id 'java'
+            }
             
             hollow {
                 packagesToScan = ['com.netflix.nebula.hollow.test']
@@ -394,20 +396,17 @@ public class Movie {
             }
         """.stripIndent()
 
-        when:
-        ExecutionResult result = runTasks('generateHollowConsumerApi')
-
-        then:
-        !result.success
+        expect:
+        runTasksAndFail('generateHollowConsumerApi')
     }
 
     def 'execution of generator - fails when required config is missing'() {
         given:
         buildFile << """
-            apply plugin: 'java'
-            apply plugin: 'nebula.hollow'
-            
-            sourceCompatibility = 1.8
+            plugins {
+               id 'java'
+               id 'com.netflix.nebula.hollow'
+            }
             
             hollow {
                 packagesToScan = ['com.netflix.nebula.hollow.test']
@@ -424,11 +423,10 @@ public class Movie {
 
 
         when:
-        ExecutionResult result = runTasks('generateHollowConsumerApi')
+        def result = runTasksAndFail('generateHollowConsumerApi')
 
         then:
-        !result.success
-        result.standardError.contains('Specify buildscript as per plugin readme | apiClassName, apiPackageName and packagesToScan configuration values must be present')
+        result.output.contains('Specify buildscript as per plugin readme | apiClassName, apiPackageName and packagesToScan configuration values must be present')
     }
 
 

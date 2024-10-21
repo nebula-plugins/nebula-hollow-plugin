@@ -20,6 +20,7 @@ import com.netflix.hollow.core.write.HollowWriteStateEngine;
 import com.netflix.hollow.core.write.objectmapper.HollowObjectMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.InvalidUserDataException;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -29,6 +30,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 
+@CacheableTask
 public class ApiGeneratorTask extends DefaultTask {
 
     private final File projectDirFile = getProject().getProjectDir();

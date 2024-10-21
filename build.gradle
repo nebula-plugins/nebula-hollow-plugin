@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 plugins {
-    id 'com.netflix.nebula.release' version '17.2.2'
-    id 'nebula.plugin-plugin' version '17.1.0'
-    id 'java'
+    id 'com.netflix.nebula.plugin-plugin' version '20.11.0'
 }
 
 description 'Provides a task for generating hollow consumer api'
@@ -28,10 +26,6 @@ contacts {
     }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-
 repositories {
     mavenCentral()
 }
@@ -42,17 +36,21 @@ dependencies {
     implementation "com.netflix.hollow:hollow:latest.release"
 }
 
-pluginBundle {
-    tags = ['hollow', 'nebula']
-}
-
 gradlePlugin {
     plugins {
-        hollow {
+        nebulaHollow {
+            id = 'com.netflix.nebula.hollow'
+            displayName = 'Nebula Hollow Plugin'
+            description = project.description
+            implementationClass = 'com.netflix.nebula.hollow.ApiGeneratorPlugin'
+            tags.set(['hollow', 'nebula'])
+        }
+        nebulaHollowLegacyId {
             id = 'nebula.hollow'
             displayName = 'Nebula Hollow Plugin'
             description = project.description
             implementationClass = 'com.netflix.nebula.hollow.ApiGeneratorPlugin'
+            tags.set(['hollow', 'nebula'])
         }
     }
 }
