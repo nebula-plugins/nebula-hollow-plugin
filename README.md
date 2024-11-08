@@ -57,6 +57,7 @@ optional values:
 - `useHollowPrimitiveTypes` - specify to use Hollow Primitive Types instead of generating them per project. defaults to `true`
 - `restrictApiToFieldType` - api code only generates `get<FieldName>` with return type as per schema. defaults to `true`
 - `useVerboseToString` - will implement `toString()` method for hollow objects with `HollowRecordStringifier().stringify(this)`. defaults to `true`
+- `useGeneratedAnnotation` - adds `com.netflix.hollow.HollowGenerated` annotation on generated classes. Defaults to `false`
 
 For more information, please refer to [`AbstractHollowAPIGeneratorBuilder`](https://github.com/Netflix/hollow/blob/master/hollow/src/main/java/com/netflix/hollow/api/codegen/AbstractHollowAPIGeneratorBuilder.java)
 launch task:
