@@ -20,9 +20,15 @@ import com.netflix.hollow.core.write.HollowWriteStateEngine;
 import com.netflix.hollow.core.write.objectmapper.HollowObjectMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.tasks.CacheableTask;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.Optional;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -33,75 +39,217 @@ import java.util.*;
 @CacheableTask
 public class ApiGeneratorTask extends DefaultTask {
 
-    private final File projectDirFile = getProject().getProjectDir();
-    private final String projectDirPath = projectDirFile.getAbsolutePath();
-    private final String relativeJavaSourcesPath = "/src/main/java/";
-    private final String javaSourcesPath = projectDirPath + relativeJavaSourcesPath;
-    //TODO: perhaps allow the users to configure these paths?
-    private final String[] compiledClassesPaths = {
-            projectDirPath + "/build/classes/main/",
-            projectDirPath + "/build/classes/java/main/",
-    };
+    private final ListProperty<String> packagesToScan;
+    private final Property<String> apiClassName;
+    private final Property<String> apiPackageName;
+    private final Property<String> getterPrefix;
+    private final Property<String> classPostfix;
+    private final Property<String> destinationPath;
+    private final Property<Boolean> parameterizeAllClassNames;
+    private final Property<Boolean> useAggressiveSubstitutions;
+    private final Property<Boolean> useErgonomicShortcuts;
+    private final Property<Boolean> usePackageGrouping;
+    private final Property<Boolean> useBooleanFieldErgonomics;
+    private final Property<Boolean> reservePrimaryKeyIndexForTypeWithPrimaryKey;
+    private final Property<Boolean> useHollowPrimitiveTypes;
+    private final Property<Boolean> restrictApiToFieldType;
+    private final Property<Boolean> useVerboseToString;
+    private final Property<Boolean> useGeneratedAnnotation;
+    private final DirectoryProperty sourceDirectory;
+    private final ConfigurableFileCollection classpath;
+    private final DirectoryProperty outputDirectory;
 
     private URLClassLoader urlClassLoader;
 
+    @Inject
+    public ApiGeneratorTask(ObjectFactory objects) {
+        this.packagesToScan = objects.listProperty(String.class);
+        this.apiClassName = objects.property(String.class);
+        this.apiPackageName = objects.property(String.class);
+        this.getterPrefix = objects.property(String.class);
+        this.classPostfix = objects.property(String.class);
+        this.destinationPath = objects.property(String.class);
+        this.parameterizeAllClassNames = objects.property(Boolean.class);
+        this.useAggressiveSubstitutions = objects.property(Boolean.class);
+        this.useErgonomicShortcuts = objects.property(Boolean.class);
+        this.usePackageGrouping = objects.property(Boolean.class);
+        this.useBooleanFieldErgonomics = objects.property(Boolean.class);
+        this.reservePrimaryKeyIndexForTypeWithPrimaryKey = objects.property(Boolean.class);
+        this.useHollowPrimitiveTypes = objects.property(Boolean.class);
+        this.restrictApiToFieldType = objects.property(Boolean.class);
+        this.useVerboseToString = objects.property(Boolean.class);
+        this.useGeneratedAnnotation = objects.property(Boolean.class);
+        this.sourceDirectory = objects.directoryProperty();
+        this.classpath = objects.fileCollection();
+        this.outputDirectory = objects.directoryProperty();
+    }
+
+    @Optional
+    @Input
+    public ListProperty<String> getPackagesToScan() {
+        return packagesToScan;
+    }
+
+    @Optional
+    @Input
+    public Property<String> getApiClassName() {
+        return apiClassName;
+    }
+
+    @Optional
+    @Input
+    public Property<String> getApiPackageName() {
+        return apiPackageName;
+    }
+
+    @Optional
+    @Input
+    public Property<String> getGetterPrefix() {
+        return getterPrefix;
+    }
+
+    @Optional
+    @Input
+    public Property<String> getClassPostfix() {
+        return classPostfix;
+    }
+
+    @Optional
+    @Input
+    public Property<String> getDestinationPath() {
+        return destinationPath;
+    }
+
+    @Input
+    public Property<Boolean> getParameterizeAllClassNames() {
+        return parameterizeAllClassNames;
+    }
+
+    @Input
+    public Property<Boolean> getUseAggressiveSubstitutions() {
+        return useAggressiveSubstitutions;
+    }
+
+    @Input
+    public Property<Boolean> getUseErgonomicShortcuts() {
+        return useErgonomicShortcuts;
+    }
+
+    @Input
+    public Property<Boolean> getUsePackageGrouping() {
+        return usePackageGrouping;
+    }
+
+    @Input
+    public Property<Boolean> getUseBooleanFieldErgonomics() {
+        return useBooleanFieldErgonomics;
+    }
+
+    @Input
+    public Property<Boolean> getReservePrimaryKeyIndexForTypeWithPrimaryKey() {
+        return reservePrimaryKeyIndexForTypeWithPrimaryKey;
+    }
+
+    @Input
+    public Property<Boolean> getUseHollowPrimitiveTypes() {
+        return useHollowPrimitiveTypes;
+    }
+
+    @Input
+    public Property<Boolean> getRestrictApiToFieldType() {
+        return restrictApiToFieldType;
+    }
+
+    @Input
+    public Property<Boolean> getUseVerboseToString() {
+        return useVerboseToString;
+    }
+
+    @Input
+    public Property<Boolean> getUseGeneratedAnnotation() {
+        return useGeneratedAnnotation;
+    }
+
+    @Optional
+    @InputDirectory
+    @PathSensitive(PathSensitivity.RELATIVE)
+    public DirectoryProperty getSourceDirectory() {
+        return sourceDirectory;
+    }
+
+    @Classpath
+    public ConfigurableFileCollection getClasspath() {
+        return classpath;
+    }
+
+    @OutputDirectory
+    public DirectoryProperty getOutputDirectory() {
+        return outputDirectory;
+    }
+
     @TaskAction
     public void generateApi() throws IOException {
-        ApiGeneratorExtension extension = getProject().getExtensions().getByType(ApiGeneratorExtension.class);
-        validatePluginConfiguration(extension);
+        // Validate required configuration
+        if (!apiClassName.isPresent() || !apiPackageName.isPresent() || !packagesToScan.isPresent() || packagesToScan.get().isEmpty()) {
+            throw new InvalidUserDataException(
+                "Specify buildscript as per plugin readme | apiClassName, apiPackageName and packagesToScan configuration values must be present"
+            );
+        }
 
         initClassLoader();
 
         HollowWriteStateEngine writeEngine = new HollowWriteStateEngine();
         HollowObjectMapper mapper = new HollowObjectMapper(writeEngine);
 
-        Collection<Class<?>> datamodelClasses = extractClasses(extension.packagesToScan);
+        Collection<Class<?>> datamodelClasses = extractClasses(packagesToScan.get());
         for (Class<?> clazz : datamodelClasses) {
             getLogger().debug("Initialize schema for class {}", clazz.getName());
             mapper.initializeTypeState(clazz);
         }
 
-        String apiTargetPath = !extension.destinationPath.isEmpty() ? extension.destinationPath : buildPathToApiTargetFolder(extension.apiPackageName);
+        String apiTargetPath = destinationPath.isPresent() && !destinationPath.get().isEmpty()
+            ? destinationPath.get()
+            : buildPathToApiTargetFolder(apiPackageName.get());
 
-        HollowAPIGenerator generator = buildHollowAPIGenerator(extension, writeEngine, apiTargetPath);
-        
+        HollowAPIGenerator generator = buildHollowAPIGenerator(writeEngine, apiTargetPath);
+
         cleanupAndCreateFolders(apiTargetPath);
         generator.generateSourceFiles();
     }
 
-    private HollowAPIGenerator buildHollowAPIGenerator(ApiGeneratorExtension extension, HollowWriteStateEngine writeStateEngine, String apiTargetPath) {
+    private HollowAPIGenerator buildHollowAPIGenerator(HollowWriteStateEngine writeStateEngine, String apiTargetPath) {
         HollowAPIGenerator.Builder builder = new HollowAPIGenerator.Builder()
-                .withAPIClassname(extension.apiClassName)
-                .withPackageName(extension.apiPackageName)
+                .withAPIClassname(apiClassName.get())
+                .withPackageName(apiPackageName.get())
                 .withDataModel(writeStateEngine)
                 .withDestination(apiTargetPath)
-                .withParameterizeAllClassNames(extension.parameterizeAllClassNames)
-                .withAggressiveSubstitutions(extension.useAggressiveSubstitutions)
-                .withBooleanFieldErgonomics(extension.useBooleanFieldErgonomics)
-                .reservePrimaryKeyIndexForTypeWithPrimaryKey(extension.reservePrimaryKeyIndexForTypeWithPrimaryKey)
-                .withHollowPrimitiveTypes(extension.useHollowPrimitiveTypes)
-                .withVerboseToString(extension.useVerboseToString);
-        if (extension.useGeneratedAnnotation) {
+                .withParameterizeAllClassNames(parameterizeAllClassNames.get())
+                .withAggressiveSubstitutions(useAggressiveSubstitutions.get())
+                .withBooleanFieldErgonomics(useBooleanFieldErgonomics.get())
+                .reservePrimaryKeyIndexForTypeWithPrimaryKey(reservePrimaryKeyIndexForTypeWithPrimaryKey.get())
+                .withHollowPrimitiveTypes(useHollowPrimitiveTypes.get())
+                .withVerboseToString(useVerboseToString.get());
+        if (useGeneratedAnnotation.get()) {
             builder.withGeneratedAnnotation();
         }
 
-        if(extension.getterPrefix != null && !extension.getterPrefix.isEmpty()) {
-            builder.withGetterPrefix(extension.getterPrefix);
+        if(getterPrefix.isPresent() && !getterPrefix.get().isEmpty()) {
+            builder.withGetterPrefix(getterPrefix.get());
         }
 
-        if(extension.classPostfix != null && !extension.classPostfix.isEmpty()) {
-            builder.withClassPostfix(extension.classPostfix);
+        if(classPostfix.isPresent() && !classPostfix.get().isEmpty()) {
+            builder.withClassPostfix(classPostfix.get());
         }
 
-        if(extension.useErgonomicShortcuts) {
+        if(useErgonomicShortcuts.get()) {
             builder.withErgonomicShortcuts();
         }
 
-        if(extension.usePackageGrouping) {
+        if(usePackageGrouping.get()) {
             builder.withPackageGrouping();
         }
 
-        if(extension.restrictApiToFieldType) {
+        if(restrictApiToFieldType.get()) {
             builder.withRestrictApiToFieldType();
         }
 
@@ -110,6 +258,8 @@ public class ApiGeneratorTask extends DefaultTask {
 
     private Collection<Class<?>> extractClasses(List<String> packagesToScan) {
         Set<Class<?>> classes = new HashSet<>();
+        File sourceDirFile = sourceDirectory.get().getAsFile();
+        String sourceDirPath = sourceDirFile.getAbsolutePath();
 
         for (String packageToScan : packagesToScan) {
             File packageFile = buildPackageFile(packageToScan);
@@ -123,7 +273,7 @@ public class ApiGeneratorTask extends DefaultTask {
                         !filePath.endsWith("package-info.java") &&
                         !filePath.endsWith("module-info.java")
                         ) {
-                    String relativeFilePath = removeSubstrings(filePath, projectDirPath, relativeJavaSourcesPath);
+                    String relativeFilePath = filePath.substring(sourceDirPath.length() + 1);
                     classNames.add(convertFolderPathToPackageName(removeSubstrings(relativeFilePath, ".java")));
                 }
             }
@@ -155,11 +305,11 @@ public class ApiGeneratorTask extends DefaultTask {
     }
 
     private File buildPackageFile(String packageName) {
-        return new File(javaSourcesPath + convertPackageNameToFolderPath(packageName));
+        return new File(sourceDirectory.get().getAsFile(), convertPackageNameToFolderPath(packageName));
     }
 
     private String buildPathToApiTargetFolder(String apiPackageName) {
-        return javaSourcesPath + convertPackageNameToFolderPath(apiPackageName);
+        return new File(sourceDirectory.get().getAsFile(), convertPackageNameToFolderPath(apiPackageName)).getAbsolutePath();
     }
 
     private String convertPackageNameToFolderPath(String packageName) {
@@ -186,16 +336,10 @@ public class ApiGeneratorTask extends DefaultTask {
     }
 
     private void initClassLoader() throws MalformedURLException {
-        URL[] urls = new URL[compiledClassesPaths.length];
-        for (int i=0; i < compiledClassesPaths.length; i++){
-            urls[i]= new File(compiledClassesPaths[i]).toURI().toURL() ;
+        List<URL> urls = new ArrayList<>();
+        for (File file : classpath.getFiles()) {
+            urls.add(file.toURI().toURL());
         }
-        urlClassLoader = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
-    }
-
-    private void validatePluginConfiguration(ApiGeneratorExtension extension) {
-        if (extension.apiClassName == null || extension.apiPackageName == null || extension.packagesToScan.isEmpty()) {
-            throw new InvalidUserDataException("Specify buildscript as per plugin readme | apiClassName, apiPackageName and packagesToScan configuration values must be present");
-        }
+        urlClassLoader = new URLClassLoader(urls.toArray(new URL[0]), Thread.currentThread().getContextClassLoader());
     }
 }

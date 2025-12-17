@@ -407,20 +407,27 @@ public class Movie {
                id 'java'
                id 'com.netflix.nebula.hollow'
             }
-            
+
             hollow {
                 packagesToScan = ['com.netflix.nebula.hollow.test']
             }
-                     
+
             repositories {
                mavenCentral()
             }
-               
+
             dependencies {
                 implementation "com.netflix.hollow:hollow:3.+"
             }
         """.stripIndent()
 
+        // Create source directory and a dummy class to allow compileDataModel to succeed
+        def dummyFile = createFile('src/main/java/com/netflix/nebula/hollow/test/Dummy.java')
+        dummyFile << """package com.netflix.nebula.hollow.test;
+
+public class Dummy {
+}
+        """.stripIndent()
 
         when:
         def result = runTasksAndFail('generateHollowConsumerApi')
