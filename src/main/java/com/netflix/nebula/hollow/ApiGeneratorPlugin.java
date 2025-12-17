@@ -18,19 +18,18 @@ package com.netflix.nebula.hollow;
 import com.netflix.hollow.core.write.objectmapper.HollowObjectMapper;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
+import org.gradle.api.file.Directory;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Delete;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.net.URLClassLoader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ApiGeneratorPlugin implements Plugin<Project> {
@@ -44,53 +43,119 @@ public class ApiGeneratorPlugin implements Plugin<Project> {
         PluginContainer plugins = project.getPlugins();
 
         if (plugins.hasPlugin(JavaPlugin.class)) {
-            Map<String, Object> taskPropertiesMap = new HashMap<>();
-
-            taskPropertiesMap.put("name", "generateHollowConsumerApi");
-            taskPropertiesMap.put("group", "hollow");
-            taskPropertiesMap.put("type", ApiGeneratorTask.class);
-
-            Task generateTask = project.getTasks().create(taskPropertiesMap);
             ApiGeneratorExtension extension = project.getExtensions().create("hollow", ApiGeneratorExtension.class);
 
             JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
             SourceSet mainSourceSet = javaPluginExtension.getSourceSets().getByName("main");
 
-            project.getTasks().register("compileDataModel", JavaCompile.class, javaCompile -> {
-                List<String> packages = extension.packagesToScan
-                    .stream()
-                    .map(pkg -> pkg.replace(".", "/") + "/**")
-                    .collect(Collectors.toList());
-
+            TaskProvider<JavaCompile> compileDataModelTask = project.getTasks().register("compileDataModel", JavaCompile.class, javaCompile -> {
                 File destinationDir = mainSourceSet.getOutput().getClassesDirs()
                     .filter(file -> file.toString().contains("java"))
                     .getSingleFile();
 
-                javaCompile.setSource(mainSourceSet.getJava().getSrcDirs());
-                javaCompile.include(packages);
+                javaCompile.source(mainSourceSet.getJava().getSourceDirectories());
+                // Use doFirst to lazily configure includes from the extension
+                javaCompile.doFirst(task -> {
+                    JavaCompile compileTask = (JavaCompile) task;
+                    compileTask.include(
+                        extension.getPackagesToScan().get().stream()
+                            .map(pkg -> pkg.replace(".", "/") + "/**")
+                            .toArray(String[]::new)
+                    );
+                });
                 javaCompile.setClasspath(mainSourceSet.getCompileClasspath());
                 javaCompile.getDestinationDirectory().set(destinationDir);
             });
 
-            project.getTasks().register("cleanDataModelApi", Delete.class, deleteTask -> {
-                if (!extension.destinationPath.isEmpty()) {
-                    deleteTask.delete(extension.destinationPath);
-                    return;
-                }
+            TaskProvider<ApiGeneratorTask> generateTask = project.getTasks().register("generateHollowConsumerApi", ApiGeneratorTask.class, task -> {
+                task.setGroup("hollow");
+                task.setDescription("Generates Hollow consumer API from data model classes");
 
-                String dataModelApiPath = extension.apiPackageName.replace(".", "/");
+                // Wire all extension properties to task properties
+                task.getPackagesToScan().set(extension.getPackagesToScan());
+                task.getApiClassName().set(extension.getApiClassName());
+                task.getApiPackageName().set(extension.getApiPackageName());
+                task.getGetterPrefix().set(extension.getGetterPrefix());
+                task.getClassPostfix().set(extension.getClassPostfix());
+                task.getDestinationPath().set(extension.getDestinationPath());
+                task.getParameterizeAllClassNames().set(extension.getParameterizeAllClassNames());
+                task.getUseAggressiveSubstitutions().set(extension.getUseAggressiveSubstitutions());
+                task.getUseErgonomicShortcuts().set(extension.getUseErgonomicShortcuts());
+                task.getUsePackageGrouping().set(extension.getUsePackageGrouping());
+                task.getUseBooleanFieldErgonomics().set(extension.getUseBooleanFieldErgonomics());
+                task.getReservePrimaryKeyIndexForTypeWithPrimaryKey().set(extension.getReservePrimaryKeyIndexForTypeWithPrimaryKey());
+                task.getUseHollowPrimitiveTypes().set(extension.getUseHollowPrimitiveTypes());
+                task.getRestrictApiToFieldType().set(extension.getRestrictApiToFieldType());
+                task.getUseVerboseToString().set(extension.getUseVerboseToString());
+                task.getUseGeneratedAnnotation().set(extension.getUseGeneratedAnnotation());
 
-                List<String> paths = mainSourceSet.getJava().getSrcDirs()
-                    .stream()
-                    .map(srcDir -> srcDir.toPath().resolve(dataModelApiPath).toString())
-                    .collect(Collectors.toList());
+                // Set source directory to main java source directory
+                task.getSourceDirectory().set(
+                    project.provider(() -> {
+                        File mainJava = mainSourceSet.getJava().getSrcDirs().stream()
+                            .findFirst()
+                            .orElseThrow(() -> new IllegalStateException("No Java source directory found"));
+                        return project.getLayout().getProjectDirectory().dir(mainJava.getAbsolutePath());
+                    })
+                );
 
-                deleteTask.delete(paths);
+                // Set classpath to compiled data model classes
+                task.getClasspath().from(compileDataModelTask.flatMap(javaCompile -> javaCompile.getDestinationDirectory()));
+
+                // Set output directory based on destination path or default to source directory with API package path
+                task.getOutputDirectory().set(
+                    project.provider(() -> {
+                        String destPath = extension.getDestinationPath().getOrElse("");
+                        if (!destPath.isEmpty()) {
+                            File destFile = new File(destPath);
+                            if (destFile.isAbsolute()) {
+                                return project.getLayout().getProjectDirectory().dir(destPath);
+                            }
+                            return project.getLayout().getProjectDirectory().dir(project.file(destPath).getAbsolutePath());
+                        }
+                        // Use a fallback directory if apiPackageName is not set (task will fail with proper validation message during execution)
+                        String apiPkg = extension.getApiPackageName().getOrElse("hollow-api-fallback");
+                        File mainJava = mainSourceSet.getJava().getSrcDirs().stream().findFirst().orElseThrow();
+                        File outputDir = new File(mainJava, apiPkg.replace(".", "/"));
+                        return project.getLayout().getProjectDirectory().dir(outputDir.getAbsolutePath());
+                    })
+                );
+
+                task.dependsOn(compileDataModelTask);
             });
 
-            generateTask.dependsOn("compileDataModel");
-            project.getTasks().getByName("compileJava").dependsOn(generateTask);
-            project.getTasks().getByName("clean").dependsOn("cleanDataModelApi");
+            TaskProvider<Delete> cleanDataModelApiTask = project.getTasks().register("cleanDataModelApi", Delete.class, deleteTask -> {
+                deleteTask.delete(
+                    extension.getDestinationPath().map(destPath -> {
+                        if (!destPath.isEmpty()) {
+                            return project.files(destPath);
+                        }
+                        return project.files(
+                            extension.getApiPackageName().map(apiPkg -> {
+                                String dataModelApiPath = apiPkg.replace(".", "/");
+                                return mainSourceSet.getJava().getSrcDirs()
+                                    .stream()
+                                    .map(srcDir -> srcDir.toPath().resolve(dataModelApiPath).toString())
+                                    .collect(Collectors.toList());
+                            }).getOrElse(java.util.Collections.emptyList())
+                        );
+                    }).orElse(
+                        project.files(
+                            extension.getApiPackageName().map(apiPkg -> {
+                                String dataModelApiPath = apiPkg.replace(".", "/");
+                                return mainSourceSet.getJava().getSrcDirs()
+                                    .stream()
+                                    .map(srcDir -> srcDir.toPath().resolve(dataModelApiPath).toString())
+                                    .collect(Collectors.toList());
+                            }).getOrElse(java.util.Collections.emptyList())
+                        )
+                    )
+                );
+            });
+
+            // Wire task dependencies using configuration avoidance
+            project.getTasks().named("compileJava").configure(task -> task.dependsOn(generateTask));
+            project.getTasks().named("clean").configure(task -> task.dependsOn(cleanDataModelApiTask));
         }
     }
 }
